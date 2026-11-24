@@ -1,6 +1,8 @@
 HEIGHT = 144
 WIDTH = 256
+MARGIN = 5
 FOV = 70
 CLASS_ENTITIES = ["pig", "cow", "zombie"]
 IMAGES_PATH = "frames/data/"
 PLAYER_CAM_HEIGHT = 1.62
+GRID_SIZE_PX = 8
