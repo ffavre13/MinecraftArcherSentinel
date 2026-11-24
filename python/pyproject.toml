@@ -5,6 +5,7 @@ description = "Python client to drive a Minecraft player through the McBot mod (
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=2.2.6",
+    "opencv-python>=5.1.0.95",
     "pillow>=12.3.0",
 ]
 
