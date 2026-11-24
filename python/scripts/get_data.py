@@ -10,9 +10,9 @@ from scripts.constantes import (
     GRID_SIZE_PX,
     HEIGHT,
     IMAGES_PATH,
+    MARGIN,
     PLAYER_CAM_HEIGHT,
     WIDTH,
-    MARGIN
 )
 
 
@@ -239,7 +239,10 @@ def main():
                     )
                     current_hitbox(C, yaw, pitch)
 
-                    if current_hitbox.bounding_box[2] > MARGIN or current_hitbox.bounding_box[2] > MARGIN:
+                    if (
+                        current_hitbox.bounding_box[2] > MARGIN
+                        or current_hitbox.bounding_box[2] > MARGIN
+                    ):
                         hitboxes.append(current_hitbox)
 
             # Display hitbox points
