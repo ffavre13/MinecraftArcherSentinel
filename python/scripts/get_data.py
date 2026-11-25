@@ -6,12 +6,17 @@ from mcbot import MinecraftClient
 from PIL import Image
 from scripts.constantes import (
     CLASS_ENTITIES,
+    DEFAULT_VY,
+    END_INDEX,
+    ENTITIES_RADIUS,
     FOV,
     GRID_SIZE_PX,
     HEIGHT,
     IMAGES_PATH,
     MARGIN,
+    NUM_WAIT_TICKS,
     PLAYER_CAM_HEIGHT,
+    START_INDEX,
     WIDTH,
 )
 
@@ -126,12 +131,13 @@ def display_bounding_box(image, hitboxes, path):
         Image.fromarray(bounding_box_image).save(path + "bounding_box.png")
 
 
-def save_data(hitboxes, path):
+def save_data(hitboxes, num_entities, path):
     os.makedirs(path, exist_ok=True)
 
     data = {
         "hitboxes_points": [hb.screen_points for hb in hitboxes],
         "bounding_boxes": [hb.bounding_box for hb in hitboxes],
+        "num_entities_detected": num_entities,
     }
 
     np.savez(path + "data.npz", data)
@@ -143,9 +149,9 @@ def save_label(hitboxes, path):
     available_hitboxes = [hb for hb in hitboxes]
     grids = []
 
-    for x in range(0, WIDTH, GRID_SIZE_PX):
+    for y in range(0, HEIGHT, GRID_SIZE_PX):
         tmp_grid_line = []
-        for y in range(0, HEIGHT, GRID_SIZE_PX):
+        for x in range(0, WIDTH, GRID_SIZE_PX):
             possible_candidates = []
 
             for hb in available_hitboxes:
@@ -183,44 +189,45 @@ def save_label(hitboxes, path):
 
         grids.append(tmp_grid_line)
 
-    np.savez(path + "label.npz", grids)
+    np.save(path + "label.npy", grids)
 
 
 def main():
     with MinecraftClient() as mc:
         info = mc.wait_for_world()
         mc.config(width=WIDTH, height=HEIGHT)
-        for i in range(10):
+        for i in range(START_INDEX, END_INDEX):
             # Wait 2 second between capture
-            _, info = mc.step(40)
+            _, info = mc.step(NUM_WAIT_TICKS)
 
             print("[WAITING] - player should not move")
 
             # Capture only if the player is not moving
             vx, vy, vz = info["motion"]
-            default_vy = -0.0784000015258789
-            while vx != 0 or (vy != 0 and vy != default_vy) or vz != 0:
-                _, info = mc.step(40)
+            while vx != 0 or (vy != 0 and vy != DEFAULT_VY) or vz != 0:
+                _, info = mc.step(NUM_WAIT_TICKS)
                 vx, vy, vz = info["motion"]
 
             print("[CAPTURE] - image and entities")
 
             image, info = mc.step(
                 ticks=1,
-                entities={"types": CLASS_ENTITIES, "visibility": True, "radius": 50},
+                entities={
+                    "types": CLASS_ENTITIES,
+                    "visibility": True,
+                    "radius": ENTITIES_RADIUS,
+                },
                 frame=True,
             )
 
-            print(
-                "Number of detected entities:",
-                np.sum(
-                    [
-                        1
-                        for e in info["entities"]
-                        if e.in_view and e.line_of_sight and not e.invisible
-                    ]
-                ),
+            num_entities_detected = np.sum(
+                [
+                    1
+                    for e in info["entities"]
+                    if e.in_view and e.line_of_sight and not e.invisible
+                ]
             )
+            print("[LOG] - Number of detected entities:", num_entities_detected)
 
             if image is not None:
                 path = IMAGES_PATH + f"{i}/"
@@ -241,7 +248,7 @@ def main():
 
                     if (
                         current_hitbox.bounding_box[2] > MARGIN
-                        or current_hitbox.bounding_box[2] > MARGIN
+                        and current_hitbox.bounding_box[3] > MARGIN
                     ):
                         hitboxes.append(current_hitbox)
 
@@ -252,7 +259,7 @@ def main():
             display_bounding_box(image, hitboxes, IMAGES_PATH + f"{i}/")
 
             # Save data in a npz file
-            save_data(hitboxes, IMAGES_PATH + f"{i}/")
+            save_data(hitboxes, num_entities_detected, IMAGES_PATH + f"{i}/")
 
             # Save label in a npz file
             save_label(hitboxes, IMAGES_PATH + f"{i}/")
