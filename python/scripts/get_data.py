@@ -16,23 +16,13 @@ from scripts.constantes import (
     MARGIN,
     NUM_WAIT_TICKS,
     PLAYER_CAM_HEIGHT,
+    SEED,
     START_INDEX,
     WIDTH,
 )
+from scripts.get_position import get_position
+from scripts.utils import rotation_x, rotation_y
 
-def rotation_y(yaw):
-    cos_yaw = np.cos(yaw)
-    sin_yaw = np.sin(yaw)
-
-    return np.array([[cos_yaw, 0, sin_yaw], [0, 1, 0], [-sin_yaw, 0, cos_yaw]])
-
-def rotation_x(pitch):
-    cos_pitch = np.cos(pitch)
-    sin_pitch = np.sin(pitch)
-
-    return np.array(
-            [[1, 0, 0], [0, cos_pitch, -sin_pitch], [0, sin_pitch, cos_pitch]]
-        )
 
 class hitbox:
     def __init__(
@@ -152,6 +142,10 @@ def save_label(hitboxes, path):
     os.makedirs(path, exist_ok=True)
 
     available_hitboxes = [hb for hb in hitboxes]
+
+    if len(available_hitboxes) == 0:
+        return
+
     grids = []
 
     for y in range(0, HEIGHT, GRID_SIZE_PX):
@@ -182,14 +176,19 @@ def save_label(hitboxes, path):
                         current_hitbox.bounding_box[1],
                         current_hitbox.bounding_box[2],
                         current_hitbox.bounding_box[3],
-                        1 if current_hitbox.entityClass == CLASS_ENTITIES[0] else 0,
-                        1 if current_hitbox.entityClass == CLASS_ENTITIES[1] else 0,
-                        1 if current_hitbox.entityClass == CLASS_ENTITIES[2] else 0,
                     ]
                 )
+                for i in range(len(CLASS_ENTITIES)):
+                    label = np.append(
+                        label, 1 if current_hitbox.entityClass == CLASS_ENTITIES[i] else 0
+                    )
             else:
-                label = np.array([0, 0, 0, 0, 0, 0, 0, 0])
-
+                label = np.array([0, 0, 0, 0, 0])
+                for i in range(len(CLASS_ENTITIES)):
+                    label = np.append(
+                        label, 0
+                    )
+                    
             tmp_grid_line.append(label)
 
         grids.append(tmp_grid_line)
@@ -201,13 +200,16 @@ def main():
     with MinecraftClient() as mc:
         info = mc.wait_for_world()
         mc.config(width=WIDTH, height=HEIGHT)
+        np.random.seed(SEED)
         for i in range(START_INDEX, END_INDEX):
-            # Wait 2 second between capture
-            _, info = mc.step(NUM_WAIT_TICKS)
+            print("[LOG] - The player get a random position")
+
+            get_position(mc)
 
             print("[WAITING] - player should not move")
 
             # Capture only if the player is not moving
+            _, info = mc.step(0)
             vx, vy, vz = info["motion"]
             while vx != 0 or (vy != 0 and vy != DEFAULT_VY) or vz != 0:
                 _, info = mc.step(NUM_WAIT_TICKS)

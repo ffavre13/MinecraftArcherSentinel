@@ -1,6 +1,12 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
-from scripts.constantes import GRID_HEIGHT, GRID_WIDTH, MEAN_NUM_ENTITIES_PER_IMAGE
+from scripts.constantes import (
+    CLASS_ENTITIES,
+    GRID_HEIGHT,
+    GRID_WIDTH,
+    MEAN_NUM_ENTITIES_PER_IMAGE,
+)
 from torch import nn
 
 
@@ -19,7 +25,11 @@ class CNN(nn.Module):
             in_channels=32, out_channels=64, kernel_size=5, stride=1, padding=2
         )
         self.conv4 = nn.Conv2d(
-            in_channels=64, out_channels=8, kernel_size=1, stride=1, padding=0
+            in_channels=64,
+            out_channels=5 + len(CLASS_ENTITIES),
+            kernel_size=1,
+            stride=1,
+            padding=0,
         )
 
     def forward(self, x):
@@ -45,8 +55,27 @@ class CustomLoss(nn.Module):
         self.mse = nn.MSELoss()
 
     def forward(self, predictions, targets):
+        # TODO: If pc = 0 compute only bce
+
         return (
             self.bce(predictions[:, :, :, 0], targets[:, :, :, 0])
             + self.mse(predictions[:, :, :, 1:5], targets[:, :, :, 1:5])
-            + self.ce(predictions[:, :, :, -3], targets[:, :, :, -3])
+            + self.ce(
+                predictions[:, :, :, -len(CLASS_ENTITIES)],
+                targets[:, :, :, -len(CLASS_ENTITIES)],
+            )
         )
+
+
+def rotation_y(yaw):
+    cos_yaw = np.cos(yaw)
+    sin_yaw = np.sin(yaw)
+
+    return np.array([[cos_yaw, 0, sin_yaw], [0, 1, 0], [-sin_yaw, 0, cos_yaw]])
+
+
+def rotation_x(pitch):
+    cos_pitch = np.cos(pitch)
+    sin_pitch = np.sin(pitch)
+
+    return np.array([[1, 0, 0], [0, cos_pitch, -sin_pitch], [0, sin_pitch, cos_pitch]])

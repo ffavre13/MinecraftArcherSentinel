@@ -1,6 +1,7 @@
 import glob
 
 import matplotlib.pyplot as plt
+from pathlib import Path
 import numpy as np
 import torch
 from PIL import Image
@@ -24,13 +25,24 @@ def evaluate_model(model, test_loader, loss_function):
 
 def main():
     torch.manual_seed(SEED)
+    np.random.seed(SEED)
 
-    image_path = sorted(glob.glob("frames/data/*/before.png"))
+    # Setup data
+    label_path = []
+    image_path = []
+    for label in Path("frames/data").glob("*/label.npy"):
+        label_path.append(label)
+        image_path.append(label.parent / "before.png")
+
     image_data = np.array([np.array(Image.open(image)) for image in image_path])
-
-    label_path = sorted(glob.glob("frames/data/*/label.npy"))
     label_data = np.array([np.load(label) for label in label_path])
 
+    # Shuffle the data
+    shuffle_index = np.random.permutation(len(image_data))
+    image_data = image_data[shuffle_index]
+    label_data = label_data[shuffle_index]
+
+    # Split train/test
     split_index = int(len(image_data) * TEST_RATIO)
 
     X_test = torch.FloatTensor(image_data[0:split_index])
@@ -47,13 +59,16 @@ def main():
     )
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=32)
 
+    # Model configuration
     model = CNN()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     loss_function = CustomLoss()
 
+    # Train model
     train_losses = []
     test_losses = []
     for epoch in tqdm(range(EPOCH)):
+        model.train()
         epoch_loss = 0.0
         for inputs, labels in train_loader:
             optimizer.zero_grad()
