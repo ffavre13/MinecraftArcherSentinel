@@ -1,7 +1,6 @@
-import glob
+from pathlib import Path
 
 import matplotlib.pyplot as plt
-from pathlib import Path
 import numpy as np
 import torch
 from PIL import Image
@@ -86,6 +85,7 @@ def main():
 
     plt.plot(train_losses, label="Training loss")
     plt.plot(test_losses, label="Test loss")
+    plt.ylim(0, 1)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Train and test loss over time")

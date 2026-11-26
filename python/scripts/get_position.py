@@ -1,12 +1,20 @@
 import numpy as np
 from mcbot import McBotError, MinecraftClient
-from scripts.constantes import CLASS_ENTITIES, DEFAULT_VY, PLAYER_CAM_HEIGHT
+from scripts.constantes import (
+    CLASS_ENTITIES,
+    DEFAULT_VY,
+    ENTITIES_RADIUS,
+    HEIGHT,
+    NUM_WAIT_TICKS,
+    PLAYER_CAM_HEIGHT,
+    WIDTH,
+)
 from scripts.utils import rotation_y
 
 
 def get_position(mc):
     # List all entities
-    entities = mc.get_entities(radius=16, types=CLASS_ENTITIES, limit=5)
+    entities = mc.get_entities(radius=ENTITIES_RADIUS, types=CLASS_ENTITIES, limit=15)
 
     if len(entities) == 0:
         print("[LOG] - No entities detected")
@@ -29,7 +37,7 @@ def get_position(mc):
 
     # Travael to the coordinate
     try:
-        info = mc.fly_to(*new_coordinate, max_steps=40)
+        info = mc.fly_to(*new_coordinate, max_steps=NUM_WAIT_TICKS)
     except McBotError:
         pass
 
@@ -84,4 +92,6 @@ def get_position(mc):
 
 if __name__ == "__main__":
     with MinecraftClient() as mc:
+        info = mc.wait_for_world()
+        mc.config(width=WIDTH, height=HEIGHT, hide_gui=True)
         get_position(mc)

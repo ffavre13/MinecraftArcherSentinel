@@ -6,6 +6,7 @@ from scripts.constantes import (
     GRID_HEIGHT,
     GRID_WIDTH,
     MEAN_NUM_ENTITIES_PER_IMAGE,
+    NUM_LABEL_FEATURE,
 )
 from torch import nn
 
@@ -26,7 +27,7 @@ class CNN(nn.Module):
         )
         self.conv4 = nn.Conv2d(
             in_channels=64,
-            out_channels=5 + len(CLASS_ENTITIES),
+            out_channels=NUM_LABEL_FEATURE + len(CLASS_ENTITIES),
             kernel_size=1,
             stride=1,
             padding=0,
@@ -55,14 +56,20 @@ class CustomLoss(nn.Module):
         self.mse = nn.MSELoss()
 
     def forward(self, predictions, targets):
-        # TODO: If pc = 0 compute only bce
+        # Apply bce on evry predictions but apply mse and ce only if the target grid have an entity
+        haveAnEntity = targets[:, :, :, 0] == 1
+        if not haveAnEntity.any():
+            return self.bce(predictions[:, :, :, 0], targets[:, :, :, 0])
 
         return (
             self.bce(predictions[:, :, :, 0], targets[:, :, :, 0])
-            + self.mse(predictions[:, :, :, 1:5], targets[:, :, :, 1:5])
+            + self.mse(
+                predictions[:, :, :, 1:NUM_LABEL_FEATURE][haveAnEntity],
+                targets[:, :, :, 1:NUM_LABEL_FEATURE][haveAnEntity],
+            )
             + self.ce(
-                predictions[:, :, :, -len(CLASS_ENTITIES)],
-                targets[:, :, :, -len(CLASS_ENTITIES)],
+                predictions[:, :, :, -len(CLASS_ENTITIES) :][haveAnEntity],
+                targets[:, :, :, -len(CLASS_ENTITIES) :][haveAnEntity],
             )
         )
 

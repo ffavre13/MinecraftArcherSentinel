@@ -14,6 +14,8 @@ from scripts.constantes import (
     HEIGHT,
     IMAGES_PATH,
     MARGIN,
+    MIN_PADDING,
+    NUM_LABEL_FEATURE,
     NUM_WAIT_TICKS,
     PLAYER_CAM_HEIGHT,
     SEED,
@@ -77,6 +79,10 @@ class hitbox:
                 ]
             )
             for point in self.points
+        ]
+        self.screen_points = [
+            np.array([max(0, min(points[0], WIDTH)), max(0, min(points[1], HEIGHT))])
+            for points in self.screen_points
         ]
 
     def get_bounding_box(self):
@@ -172,23 +178,23 @@ def save_label(hitboxes, path):
                 label = np.array(
                     [
                         1,
-                        current_hitbox.bounding_box[0],
-                        current_hitbox.bounding_box[1],
-                        current_hitbox.bounding_box[2],
-                        current_hitbox.bounding_box[3],
+                        (current_hitbox.bounding_box[0] - x) / GRID_SIZE_PX,
+                        (current_hitbox.bounding_box[1] - y) / GRID_SIZE_PX,
+                        current_hitbox.bounding_box[2] / WIDTH,
+                        current_hitbox.bounding_box[3] / HEIGHT,
+                        current_hitbox.distance / ENTITIES_RADIUS,
                     ]
                 )
                 for i in range(len(CLASS_ENTITIES)):
                     label = np.append(
-                        label, 1 if current_hitbox.entityClass == CLASS_ENTITIES[i] else 0
+                        label,
+                        1 if current_hitbox.entityClass == CLASS_ENTITIES[i] else 0,
                     )
             else:
-                label = np.array([0, 0, 0, 0, 0])
-                for i in range(len(CLASS_ENTITIES)):
-                    label = np.append(
-                        label, 0
-                    )
-                    
+                label = np.array([])
+                for i in range(NUM_LABEL_FEATURE + len(CLASS_ENTITIES)):
+                    label = np.append(label, 0)
+
             tmp_grid_line.append(label)
 
         grids.append(tmp_grid_line)
@@ -199,7 +205,7 @@ def save_label(hitboxes, path):
 def main():
     with MinecraftClient() as mc:
         info = mc.wait_for_world()
-        mc.config(width=WIDTH, height=HEIGHT)
+        mc.config(width=WIDTH, height=HEIGHT, hide_gui=True)
         np.random.seed(SEED)
         for i in range(START_INDEX, END_INDEX):
             print("[LOG] - The player get a random position")
@@ -209,7 +215,7 @@ def main():
             print("[WAITING] - player should not move")
 
             # Capture only if the player is not moving
-            _, info = mc.step(0)
+            _, info = mc.step(10)
             vx, vy, vz = info["motion"]
             while vx != 0 or (vy != 0 and vy != DEFAULT_VY) or vz != 0:
                 _, info = mc.step(NUM_WAIT_TICKS)
@@ -256,6 +262,8 @@ def main():
                     if (
                         current_hitbox.bounding_box[2] > MARGIN
                         and current_hitbox.bounding_box[3] > MARGIN
+                        and current_hitbox.bounding_box[0] > MIN_PADDING
+                        and current_hitbox.bounding_box[1] > MIN_PADDING
                     ):
                         hitboxes.append(current_hitbox)
 
