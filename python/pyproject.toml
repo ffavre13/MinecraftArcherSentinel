@@ -9,6 +9,7 @@ dependencies = [
     "opencv-python>=5.1.0.95",
     "pillow>=12.3.0",
     "torch>=2.14.1",
+    "tqdm>=4.70.1",
 ]
 
 [dependency-groups]

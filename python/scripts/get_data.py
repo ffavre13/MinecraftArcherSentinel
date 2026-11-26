@@ -20,6 +20,19 @@ from scripts.constantes import (
     WIDTH,
 )
 
+def rotation_y(yaw):
+    cos_yaw = np.cos(yaw)
+    sin_yaw = np.sin(yaw)
+
+    return np.array([[cos_yaw, 0, sin_yaw], [0, 1, 0], [-sin_yaw, 0, cos_yaw]])
+
+def rotation_x(pitch):
+    cos_pitch = np.cos(pitch)
+    sin_pitch = np.sin(pitch)
+
+    return np.array(
+            [[1, 0, 0], [0, cos_pitch, -sin_pitch], [0, sin_pitch, cos_pitch]]
+        )
 
 class hitbox:
     def __init__(
@@ -58,16 +71,8 @@ class hitbox:
         yaw = np.deg2rad(yaw)
         pitch = np.deg2rad(-pitch)
 
-        cos_yaw = np.cos(yaw)
-        sin_yaw = np.sin(yaw)
-
-        cos_pitch = np.cos(pitch)
-        sin_pitch = np.sin(pitch)
-
-        Ry = np.array([[cos_yaw, 0, sin_yaw], [0, 1, 0], [-sin_yaw, 0, cos_yaw]])
-        Rx = np.array(
-            [[1, 0, 0], [0, cos_pitch, -sin_pitch], [0, sin_pitch, cos_pitch]]
-        )
+        Ry = rotation_y(yaw)
+        Rx = rotation_x(pitch)
 
         self.points = [np.linalg.matmul(Ry, point) for point in self.points]
         self.points = [np.linalg.matmul(Rx, point) for point in self.points]

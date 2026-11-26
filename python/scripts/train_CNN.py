@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 from scripts.constantes import EPOCH, SEED, TEST_RATIO
 from scripts.utils import CNN, CustomLoss
+from tqdm import tqdm
 
 
 def evaluate_model(model, test_loader, loss_function):
@@ -42,9 +43,9 @@ def main():
     test_dataset = torch.utils.data.TensorDataset(X_test, y_test)
 
     train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=2, shuffle=True
+        dataset=train_dataset, batch_size=32, shuffle=True
     )
-    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=2)
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=32)
 
     model = CNN()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -52,7 +53,7 @@ def main():
 
     train_losses = []
     test_losses = []
-    for epoch in range(EPOCH):
+    for epoch in tqdm(range(EPOCH)):
         epoch_loss = 0.0
         for inputs, labels in train_loader:
             optimizer.zero_grad()
