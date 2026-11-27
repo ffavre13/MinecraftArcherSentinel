@@ -21,7 +21,9 @@ if __name__ == "__main__":
         output = output[0].numpy()
         for y in range(len(output)):
             for x in range(len(output[0])):
-                output[y, x, 0] = 0 if output[y, x, 0] < 0.9 else 1
+                output[y, x, 0] = round(output[y, x, 0],3)
+                if output[y, x, 0] < 0.8:
+                    output[y, x, 0] = 0
 
         print(output.shape)
         check_label(output)
@@ -30,7 +32,7 @@ if __name__ == "__main__":
 
     for y in range(len(output)):
         for x in range(len(output[0])):
-            if output[y, x, 0] == 1:
+            if output[y, x, 0] > 0.99:
                 print(output[y, x])
                 cv2.rectangle(
                     bounding_box_image,

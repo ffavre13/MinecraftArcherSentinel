@@ -1,0 +1,15 @@
+flowchart LR
+    A["Input<br>(batch, H, W, 3)"]
+    A --> B["Conv2d<br>3 -> 16<br>Relu<br>MaxPool2d"]
+    B --> C["Conv2d<br>16 -> 32<br>Relu<br>MaxPool2d"]
+    C --> D["Conv2d<br>32 -> 64<br>Relu<br>MaxPool2d"]
+    D --> E["Conv2d<br>64 -> 8"]
+
+     A:::input
+     B:::conv
+     C:::conv
+     D:::conv
+     E:::conv
+
+    classDef input fill:#f0f9ff,stroke:#38bdf8
+    classDef conv fill:#eef2ff,stroke:#818cf8
